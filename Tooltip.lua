@@ -15,10 +15,10 @@ local WARN = { 1, 0.6, 0.2 }
 
 local OLD_DAYS = 3   -- prices from this many days ago on get an age note
 local READY = "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t"
+local PLACES = 3     -- characters/banks listed under a package
 
 local NameByID = C_Item and C_Item.GetItemNameByID
 local IconByID = (C_Item and C_Item.GetItemIconByID) or _G.GetItemIcon
-local CountByID = (C_Item and C_Item.GetItemCount) or _G.GetItemCount
 
 T.lastError = nil   -- last error while writing a tooltip, for /cadv
 
@@ -35,14 +35,6 @@ local function Name(option)
     return (NameByID and NameByID(option.itemID)) or option.name
 end
 
--- Owned in bags and bank, or nil if the game does not tell
-local function Owned(itemID)
-    if not CountByID then return nil end
-    local ok, count = pcall(CountByID, itemID, true)
-    if ok and type(count) == "number" then return count end
-    return nil
-end
-
 -- The crate's packages with prices, cheapest first (packages without a price last).
 -- nil if the item is not a crate.
 function T.Evaluate(crateID)
@@ -52,6 +44,7 @@ function T.Evaluate(crateID)
     for index, p in ipairs(packages) do
         local itemID, amount = p[1], p[2]
         local unit = ns.prices.ByID(itemID)
+        local owned, places = ns.stock.Get(itemID)
         options[#options + 1] = {
             index = index,
             itemID = itemID,
@@ -60,7 +53,8 @@ function T.Evaluate(crateID)
             unit = unit,
             total = unit and unit * amount,
             age = unit and ns.prices.AgeByID(itemID),
-            owned = Owned(itemID),
+            owned = owned,
+            places = places,
         }
     end
     table.sort(options, function(a, b)
@@ -68,11 +62,13 @@ function T.Evaluate(crateID)
         if a.total and a.total ~= b.total then return a.total < b.total end
         return a.index < b.index
     end)
-    local priced = 0
+    local priced, stocked = 0, nil
     for _, o in ipairs(options) do
         if o.total then priced = priced + 1 end
+        -- options are cheapest first: the first one in stock costs least to give away
+        if not stocked and o.owned >= o.amount then stocked = o end
     end
-    return { options = options, priced = priced, best = priced > 0 and options[1] or nil }
+    return { options = options, priced = priced, best = priced > 0 and options[1] or nil, stocked = stocked }
 end
 
 local function Note(o)
@@ -85,7 +81,7 @@ local function Note(o)
             notes[#notes + 1] = string.format(L["%d days old"], o.age)
         end
     end
-    if o.owned and o.owned > 0 then notes[#notes + 1] = string.format(L["you have %d"], o.owned) end
+    if o.owned > 0 then notes[#notes + 1] = string.format(L["you have %d"], o.owned) end
     if #notes == 0 then return "" end
     return " |cff999999(" .. table.concat(notes, ", ") .. ")|r"
 end
@@ -116,11 +112,14 @@ function T.AddLines(tooltip, crateID)
     for _, o in ipairs(e.options) do
         local color = (o == e.best) and GOOD or TEXT
         local icon = IconByID and IconByID(o.itemID)
-        local ready = (o.owned and o.owned >= o.amount) and (" " .. READY) or ""
+        local ready = o.owned >= o.amount and (" " .. READY) or ""
         local left = string.format("  %dx %s%s%s%s", o.amount, icon and ("|T" .. icon .. ":0|t ") or "",
             Name(o), ready, Note(o))
         local right = o.total and Money(o.total) or ("|cff999999" .. L["no price"] .. "|r")
         tooltip:AddDoubleLine(left, right, color[1], color[2], color[3], color[1], color[2], color[3])
+        if o.places and #o.places > 0 then
+            tooltip:AddLine("      " .. ns.stock.PlacesText(o.places, PLACES), DIM[1], DIM[2], DIM[3])
+        end
     end
 
     if not ns.prices.Available() then
@@ -130,6 +129,13 @@ function T.AddLines(tooltip, crateID)
     elseif #e.options > 1 then
         local color = e.priced < #e.options and WARN or GOOD
         tooltip:AddLine("» " .. T.RecommendationText(e), color[1], color[2], color[3], true)
+    end
+    if e.stocked then
+        local text = string.format(L["In stock: %s"], Name(e.stocked))
+        if e.stocked.places and #e.stocked.places > 0 then
+            text = text .. " (" .. ns.stock.PlacesText(e.stocked.places, PLACES) .. ")"
+        end
+        tooltip:AddLine(READY .. " " .. text, GOOD[1], GOOD[2], GOOD[3], true)
     end
     return true
 end

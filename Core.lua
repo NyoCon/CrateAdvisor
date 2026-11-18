@@ -30,8 +30,9 @@ local function PreloadMaterials()
 end
 
 local function PrintStatus()
-    Say("Tooltip: %s, prices: %s", ns.db.enabled and L["on"] or L["off"],
-        ns.prices.Available() and "Auctionator" or L["none (Auctionator missing)"])
+    Say("Tooltip: %s, prices: %s, stock: %s", ns.db.enabled and L["on"] or L["off"],
+        ns.prices.Available() and "Auctionator" or L["none (Auctionator missing)"],
+        ns.stock.Available() and L["all characters (Syndicator)"] or L["this character (Syndicator missing)"])
     if ns.tooltip.lastError then
         DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. "|cffff5555" .. tostring(ns.tooltip.lastError) .. "|r")
     end

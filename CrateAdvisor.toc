@@ -1,11 +1,11 @@
 ## Interface: 16001
 ## Title: CrateAdvisor
-## Notes: Shows in the tooltip of Waylaid Crates what each material package costs at the auction house and which one is cheapest (prices from Auctionator).
-## Notes-deDE: Zeigt im Tooltip der Abgefangenen Kisten, was jedes Materialpaket im Auktionshaus kostet und welches am günstigsten ist (Preise von Auctionator).
+## Notes: Shows in the tooltip of Waylaid Crates what each material package costs at the auction house and which one is cheapest (prices from Auctionator) and which materials you already own on any character (Syndicator).
+## Notes-deDE: Zeigt im Tooltip der Abgefangenen Kisten, was jedes Materialpaket im Auktionshaus kostet und welches am günstigsten ist (Preise von Auctionator) und welche Materialien du schon auf irgendeinem Charakter hast (Syndicator).
 ## Author: Lars
-## Version: 0.1.0
+## Version: 0.2.0
 ## SavedVariables: CrateAdvisorDB
-## OptionalDeps: Auctionator
+## OptionalDeps: Auctionator, Syndicator
 ## IconTexture: Interface\Icons\INV_Crate_02
 ## Category-enUS: Professions
 ## Category-deDE: Berufe
@@ -13,5 +13,6 @@
 Locales.lua
 Data\Crates.lua
 Prices.lua
+Stock.lua
 Tooltip.lua
 Core.lua

@@ -16,6 +16,12 @@ local auction = {
 local ages = { [4339] = 1, [4236] = 6, [3820] = 0, [2453] = 0, [3355] = 2, [11137] = 1, [11135] = 1, [11177] = 1 }
 local owned = { [4339] = 12, [3369] = 3 }
 local withAuctionator = os.getenv("NO_AUCTIONATOR") == nil
+local withSyndicator = os.getenv("NO_SYNDICATOR") == nil
+local elsewhere = {   -- Syndicator: itemID -> characters, guild bank, warband bank
+    [4236] = { chars = { { "Banka", 0, 2, 0 }, { "Ryzer", 1, 0, 0 } } },
+    [4339] = { chars = { { "Ryzer", 12, 0, 0 }, { "Banka", 0, 30, 0 }, { "Twink", 0, 0, 5 }, { "Alt", 1, 0, 0 } }, warband = 3 },
+    [3369] = { chars = { { "Ryzer", 3, 0, 0 } }, guild = 40 },
+}
 
 function GetLocale() return os.getenv("LOCALE") or "deDE" end
 issecretvalue = function() return false end
@@ -38,6 +44,18 @@ if withAuctionator then
         GetAuctionPriceByItemID = function(_, id) return auction[id] end,
         GetAuctionAgeByItemID = function(_, id) return ages[id] end,
     } } }
+end
+if withSyndicator then
+    Syndicator = { API = { GetInventoryInfoByItemID = function(id, sameRealm, sameFaction)
+        assert(sameRealm == true and sameFaction == true)
+        local e = elsewhere[id] or { chars = {} }
+        local r = { characters = {}, guilds = {}, warband = { e.warband or 0 } }
+        for _, c in ipairs(e.chars) do
+            r.characters[#r.characters + 1] = { character = c[1], bags = c[2], bank = c[3], mail = c[4], equipped = 0, auctions = 7 }
+        end
+        if e.guild then r.guilds[1] = { guild = "Gilde", bank = e.guild } end
+        return r
+    end } }
 end
 DEFAULT_CHAT_FRAME = { AddMessage = function(_, m) print("[chat] " .. m) end }
 SlashCmdList = {}
