@@ -31,8 +31,23 @@ Syndicator (both optional). Equipped items and running auctions do not count as 
 
 Install, `/reload`, hover over a crate.
 
-- `/cadv on|off` – tooltip lines on or off
-- `/cadv status` – status and the last tooltip error
+### Settings
+
+*Esc > Options > AddOns > CrateAdvisor*, or `/cadv`:
+
+| Setting | Default | |
+|---|---|---|
+| Show in item tooltips | on | |
+| Modifier key for details | None | None, Ctrl, Shift or Alt. With a key, unit prices, price age, owned amounts and where they lie are only shown while it is held; packages, totals, the recommendation and `Vorrätig` stay visible |
+
+### Chat commands
+
+| Command | Effect |
+|---|---|
+| `/cadv` | opens the settings |
+| `/cadv status` | status and help (also shows the last tooltip error, if any) |
+| `/cadv details none\|ctrl\|shift\|alt` | details always (default) or only while that key is held |
+| `/cadv on\|off` | tooltip lines on or off |
 
 ## How it works
 

@@ -71,7 +71,30 @@ function T.Evaluate(crateID)
     return { options = options, priced = priced, best = priced > 0 and options[1] or nil, stocked = stocked }
 end
 
-local function Note(o)
+-- Details (unit price, price age, owned count and where it lies) always, or only while a
+-- modifier key is held
+local KEY_DOWN = {
+    CTRL = function() return IsControlKeyDown and IsControlKeyDown() end,
+    SHIFT = function() return IsShiftKeyDown and IsShiftKeyDown() end,
+    ALT = function() return IsAltKeyDown and IsAltKeyDown() end,
+}
+T.KEYS = { "none", "CTRL", "SHIFT", "ALT" }   -- order in the settings dropdown
+T.KEY_NAMES = { none = "None", CTRL = "Ctrl", SHIFT = "Shift", ALT = "Alt" }
+
+-- "none" | "CTRL" | "SHIFT" | "ALT"
+function T.DetailsKey()
+    local key = ns.db and ns.db.detailsKey
+    if KEY_DOWN[key] then return key end
+    return "none"
+end
+
+function T.DetailsShown()
+    local key = T.DetailsKey()
+    return key == "none" or KEY_DOWN[key]() == true
+end
+
+local function Note(o, details)
+    if not details then return "" end
     local notes = {}
     if o.unit then
         notes[#notes + 1] = L["each"] .. " " .. Money(o.unit)
@@ -107,6 +130,7 @@ function T.AddLines(tooltip, crateID)
     local e = T.Evaluate(crateID)
     if not e then return false end
 
+    local details = T.DetailsShown()
     tooltip:AddLine(" ")
     tooltip:AddLine(L["Filling at auction house prices"], GOLD[1], GOLD[2], GOLD[3])
     for _, o in ipairs(e.options) do
@@ -114,10 +138,10 @@ function T.AddLines(tooltip, crateID)
         local icon = IconByID and IconByID(o.itemID)
         local ready = o.owned >= o.amount and (" " .. READY) or ""
         local left = string.format("  %dx %s%s%s%s", o.amount, icon and ("|T" .. icon .. ":0|t ") or "",
-            Name(o), ready, Note(o))
+            Name(o), ready, Note(o, details))
         local right = o.total and Money(o.total) or ("|cff999999" .. L["no price"] .. "|r")
         tooltip:AddDoubleLine(left, right, color[1], color[2], color[3], color[1], color[2], color[3])
-        if o.places and #o.places > 0 then
+        if details and o.places and #o.places > 0 then
             tooltip:AddLine("      " .. ns.stock.PlacesText(o.places, PLACES), DIM[1], DIM[2], DIM[3])
         end
     end
@@ -136,6 +160,10 @@ function T.AddLines(tooltip, crateID)
             text = text .. " (" .. ns.stock.PlacesText(e.stocked.places, PLACES) .. ")"
         end
         tooltip:AddLine(READY .. " " .. text, GOOD[1], GOOD[2], GOOD[3], true)
+    end
+    if not details then
+        tooltip:AddLine(string.format(L["Hold %s for details"], L[T.KEY_NAMES[T.DetailsKey()]]),
+            DIM[1], DIM[2], DIM[3])
     end
     return true
 end
@@ -162,6 +190,14 @@ local function OnItemTooltip(tooltip, data)
         if itemID and ns.crates[itemID] and T.AddLines(tooltip, itemID) then tooltip:Show() end
     end)
     if not ok then T.lastError = err end
+end
+
+-- The modifier key toggles the details: redraw the tooltip that is open
+function T.OnModifierChanged()
+    if not ns.db or T.DetailsKey() == "none" then return end
+    if GameTooltip and GameTooltip:IsShown() and GameTooltip.RefreshData then
+        pcall(GameTooltip.RefreshData, GameTooltip)
+    end
 end
 
 function T.Hook()

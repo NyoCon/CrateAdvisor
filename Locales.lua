@@ -21,8 +21,24 @@ local translations = {
         ["only option with a price"] = "einzige Option mit Preis",
         ["prices missing"] = "Preise fehlen",
         ["No prices for any package"] = "Für kein Paket gibt es Preise",
+        ["Hold %s for details"] = "%s für Details",
+        -- settings page
+        ["Tooltip"] = "Tooltip",
+        ["Show in item tooltips"] = "Im Gegenstands-Tooltip anzeigen",
+        ["The packages of a Waylaid Crate with their auction house prices, the cheapest one and your stock."] =
+            "Die Pakete einer Abgefangenen Kiste mit Auktionshauspreisen, das günstigste und dein Bestand.",
+        ["Modifier key for details"] = "Taste für Details",
+        ["None: the details are always shown. Otherwise unit prices, price age, owned amounts and where they lie only while that key is held; packages, totals and recommendation are always shown."] =
+            "Nichts: Details stehen immer da. Sonst Stückpreis, Preisalter, Bestand und wo er liegt nur bei gedrückter Taste; Pakete, Gesamtpreise und Empfehlung stehen immer da.",
+        ["None"] = "Nichts",
+        ["Ctrl"] = "Strg",
         -- chat
-        ["Tooltip: %s, prices: %s, stock: %s"] = "Tooltip: %s, Preise: %s, Bestand: %s",
+        ["Tooltip: %s, details: %s, prices: %s, stock: %s"] = "Tooltip: %s, Details: %s, Preise: %s, Bestand: %s",
+        ["always"] = "immer",
+        ["with %s"] = "mit %s",
+        ["  /cadv - settings (Esc > Options > AddOns)"] = "  /cadv - Einstellungen (Esc > Optionen > AddOns)",
+        ["  /cadv details none|ctrl|shift|alt - details always or only with that key held"] =
+            "  /cadv details none|ctrl|shift|alt - Details immer oder nur bei gedrückter Taste",
         ["this character (Syndicator missing)"] = "dieser Charakter (Syndicator fehlt)",
         ["all characters (Syndicator)"] = "alle Charaktere (Syndicator)",
         ["on"] = "an",

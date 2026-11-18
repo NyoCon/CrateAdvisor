@@ -57,6 +57,38 @@ if withSyndicator then
         return r
     end } }
 end
+local held = {}   -- modifier keys held: held.SHIFT, held.CTRL, held.ALT
+IsShiftKeyDown = function() return held.SHIFT == true end
+IsControlKeyDown = function() return held.CTRL == true end
+IsAltKeyDown = function() return held.ALT == true end
+
+-- Settings API: records what the options page registers
+local registered = {}
+Settings = {
+    VarType = { Boolean = "boolean", String = "string", Number = "number" },
+    RegisterVerticalLayoutCategory = function(name)
+        return { GetID = function() return name end }, { AddInitializer = function() end }
+    end,
+    RegisterAddOnSetting = function(_, variable, key, tbl, varType, name, default)
+        if tbl[key] == nil then tbl[key] = default end
+        assert(type(tbl[key]) == varType, variable .. " has type " .. type(tbl[key]))
+        registered[#registered + 1] = name .. " = " .. tostring(tbl[key])
+        return { variable = variable }
+    end,
+    CreateControlTextContainer = function()
+        local data = {}
+        return { Add = function(_, v, l) data[#data + 1] = v .. ":" .. l end, GetData = function() return data end }
+    end,
+    CreateCheckbox = function() return {} end,
+    CreateDropdown = function(_, _, options)
+        registered[#registered + 1] = "  dropdown: " .. table.concat(options(), ", ")
+        return {}
+    end,
+    RegisterAddOnCategory = function() end,
+    OpenToCategory = function(id) print("[settings] open " .. tostring(id)) end,
+}
+CreateSettingsListSectionHeaderInitializer = function() return {} end
+
 DEFAULT_CHAT_FRAME = { AddMessage = function(_, m) print("[chat] " .. m) end }
 SlashCmdList = {}
 local handlers = {}
@@ -74,6 +106,8 @@ function Tooltip:AddLine(t) self.lines[#self.lines + 1] = t end
 function Tooltip:AddDoubleLine(l, r) self.lines[#self.lines + 1] = string.format("%-80s %s", l, r) end
 function Tooltip:GetItem() return "Crate", "|Hitem:" .. self.id .. "|h" end
 function Tooltip:Show() end
+function Tooltip:IsShown() return true end
+function Tooltip:RefreshData() self.refreshed = true end
 local hook
 TooltipDataProcessor = { AddTooltipPostCall = function(_, fn) hook = fn end }
 Enum = { TooltipDataType = { Item = 0 } }
@@ -100,4 +134,41 @@ for _, id in ipairs({ 248708, 248686, 248694, 248712, 1234 }) do
 end
 if ns.tooltip.lastError then error(ns.tooltip.lastError) end
 
+local function Lines(id)
+    GameTooltip = Tooltip.new(id)
+    hook(GameTooltip, { id = id })
+    return GameTooltip.lines
+end
+-- with a key set the details (place lines, notes) appear only while it is held; the place lines
+-- need the Syndicator mock
+for _, key in ipairs(withSyndicator and { "SHIFT", "CTRL", "ALT" } or {}) do
+    CrateAdvisorDB.detailsKey = key
+    local hidden = Lines(248708)
+    held = { [key == "ALT" and "SHIFT" or "ALT"] = true }
+    local other = Lines(248708)
+    held = { [key] = true }
+    local shown = Lines(248708)
+    held = {}
+    assert(#hidden == #other and #shown == #hidden + 1, key .. ": line counts " .. #hidden .. "/" .. #other .. "/" .. #shown)
+    local function PlaceLines(lines)
+        local n = 0
+        for _, line in ipairs(lines) do if line:match("^      %S") then n = n + 1 end end
+        return n
+    end
+    assert(PlaceLines(hidden) == 0 and PlaceLines(shown) == 2, key .. ": place lines only with details")
+end
+CrateAdvisorDB.detailsKey = "CTRL"
+print("== 248708, details on Ctrl, not held")
+for _, line in ipairs(Lines(248708)) do print(Strip(line)) end
+GameTooltip = Tooltip.new(248708)
+for _, h in ipairs(handlers) do h(nil, "MODIFIER_STATE_CHANGED") end
+assert(GameTooltip.refreshed, "modifier change redraws the tooltip")
+
+SlashCmdList.CRATEADVISOR("details alt")
+assert(CrateAdvisorDB.detailsKey == "ALT")
+SlashCmdList.CRATEADVISOR("details none")
+assert(CrateAdvisorDB.detailsKey == "none")
+SlashCmdList.CRATEADVISOR("")
 SlashCmdList.CRATEADVISOR("status")
+print("-- settings page")
+for _, line in ipairs(registered) do print(line) end
