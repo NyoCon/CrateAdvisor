@@ -45,3 +45,7 @@ to item IDs and writes `Data/Crates.lua`. Rerun it when Forever adds or changes 
     python3 tools/update_data.py [build]
 
 Test without the game: `luajit dev/run.lua` (`LOCALE=enUS`, `NO_AUCTIONATOR=1`, `NO_SYNDICATOR=1` for variants).
+
+## License
+
+MIT, see `LICENSE`.
